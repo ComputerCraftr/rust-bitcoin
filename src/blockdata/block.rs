@@ -25,7 +25,7 @@ use crate::blockdata::transaction::Transaction;
 use crate::blockdata::constants::{max_target, WITNESS_SCALE_FACTOR};
 use crate::blockdata::script;
 use crate::VarInt;
-use crate::internal_macros::impl_consensus_encoding;
+// use crate::internal_macros::impl_consensus_encoding;
 
 /// Bitcoin block header.
 ///
@@ -63,7 +63,113 @@ pub struct BlockHeader {
     pub acc_checkpoint: AccCheckpoint,
 }
 
-impl_consensus_encoding!(BlockHeader, version, prev_blockhash, merkle_root, time, bits, nonce, acc_checkpoint);
+impl Encodable for BlockHeader {
+    #[inline]
+    fn consensus_encode<R: ::std::io::Write + ?Sized>(
+        &self,
+        r: &mut R,
+    ) -> Result<usize, ::std::io::Error> {
+        let mut len = 0;
+
+        len += self.version.consensus_encode(r)?;
+        len += self.prev_blockhash.consensus_encode(r)?;
+        len += self.merkle_root.consensus_encode(r)?;
+        len += self.time.consensus_encode(r)?;
+        len += self.bits.consensus_encode(r)?;
+        len += self.nonce.consensus_encode(r)?;
+
+        // If the header version is 4, then we serialize the zerocoin accumulator checkpoint
+        if self.version == 4 {
+            len += self.acc_checkpoint.consensus_encode(r)?;
+        }
+        Ok(len)
+    }
+}
+
+impl Decodable for BlockHeader {
+    #[inline]
+    fn consensus_decode_from_finite_reader<R: ::std::io::Read + ?Sized>(
+        r: &mut R,
+    ) -> Result<Self, encode::Error> {
+        let version = i32::consensus_decode_from_finite_reader(r)?;
+        let prev_blockhash = BlockHash::consensus_decode_from_finite_reader(r)?;
+        let merkle_root = TxMerkleNode::consensus_decode_from_finite_reader(r)?;
+        let time = u32::consensus_decode_from_finite_reader(r)?;
+        let bits = u32::consensus_decode_from_finite_reader(r)?;
+        let nonce = u32::consensus_decode_from_finite_reader(r)?;
+
+        // If the header version is 4, then we serialize the zerocoin accumulator checkpoint
+        if version == 4 {
+            let acc_checkpoint = AccCheckpoint::consensus_decode_from_finite_reader(r)?;
+
+            Ok(BlockHeader {
+                version: version,
+                prev_blockhash: prev_blockhash,
+                merkle_root: merkle_root,
+                time: time,
+                bits: bits,
+                nonce: nonce,
+                acc_checkpoint: acc_checkpoint
+            })
+        } else {
+            let acc_checkpoint = Hash::all_zeros();
+
+            Ok(BlockHeader {
+                version: version,
+                prev_blockhash: prev_blockhash,
+                merkle_root: merkle_root,
+                time: time,
+                bits: bits,
+                nonce: nonce,
+                acc_checkpoint: acc_checkpoint
+            })
+        }
+    }
+
+    #[inline]
+    fn consensus_decode<R: ::std::io::Read + ?Sized>(
+        r: &mut R,
+    ) -> Result<Self, encode::Error> {
+        use crate::io::Read as _;
+        let mut r = r.take(encode::MAX_VEC_SIZE as u64);
+
+        let version = i32::consensus_decode(r.by_ref())?;
+        let prev_blockhash = BlockHash::consensus_decode(r.by_ref())?;
+        let merkle_root = TxMerkleNode::consensus_decode(r.by_ref())?;
+        let time = u32::consensus_decode(r.by_ref())?;
+        let bits = u32::consensus_decode(r.by_ref())?;
+        let nonce = u32::consensus_decode(r.by_ref())?;
+
+        // If the header version is 4, then we serialize the zerocoin accumulator checkpoint
+        if version == 4 {
+            let acc_checkpoint = AccCheckpoint::consensus_decode(r.by_ref())?;
+
+            Ok(BlockHeader {
+                version: version,
+                prev_blockhash: prev_blockhash,
+                merkle_root: merkle_root,
+                time: time,
+                bits: bits,
+                nonce: nonce,
+                acc_checkpoint: acc_checkpoint
+            })
+        } else {
+            let acc_checkpoint = Hash::all_zeros();
+
+            Ok(BlockHeader {
+                version: version,
+                prev_blockhash: prev_blockhash,
+                merkle_root: merkle_root,
+                time: time,
+                bits: bits,
+                nonce: nonce,
+                acc_checkpoint: acc_checkpoint
+            })
+        }
+    }
+}
+
+// impl_consensus_encoding!(BlockHeader, version, prev_blockhash, merkle_root, time, bits, nonce, acc_checkpoint);
 
 impl BlockHeader {
     /// Returns the block hash.
