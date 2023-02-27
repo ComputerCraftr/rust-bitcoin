@@ -57,6 +57,8 @@ See [`hashes::Hash::DISPLAY_BACKWARD`] for more details.
     hash_newtype!(WitnessCommitment, sha256d::Hash, 32, doc="A hash corresponding to the witness structure commitment in the coinbase transaction");
     hash_newtype!(XpubIdentifier, hash160::Hash, 20, doc="XpubIdentifier as defined in BIP-32.");
 
+    hash_newtype!(AccCheckpoint, sha256d::Hash, 32, doc="The zerocoin accumulator checkpoint.");
+
     hash_newtype!(FilterHash, sha256d::Hash, 32, doc="Filter hash, as defined in BIP-157");
     hash_newtype!(FilterHeader, sha256d::Hash, 32, doc="Filter header, as defined in BIP-157");
 
@@ -67,6 +69,8 @@ See [`hashes::Hash::DISPLAY_BACKWARD`] for more details.
 
     impl_hashencode!(TxMerkleNode);
     impl_hashencode!(WitnessMerkleNode);
+
+    impl_hashencode!(AccCheckpoint);
 
     impl_hashencode!(FilterHash);
     impl_hashencode!(FilterHeader);

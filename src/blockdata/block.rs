@@ -17,7 +17,7 @@ use crate::util;
 use crate::util::Error::{BlockBadTarget, BlockBadProofOfWork};
 use crate::util::hash::bitcoin_merkle_root;
 use crate::hashes::{Hash, HashEngine};
-use crate::hash_types::{Wtxid, BlockHash, TxMerkleNode, WitnessMerkleNode, WitnessCommitment};
+use crate::hash_types::{Wtxid, BlockHash, TxMerkleNode, WitnessMerkleNode, WitnessCommitment, AccCheckpoint};
 use crate::util::uint::Uint256;
 use crate::consensus::{encode, Decodable, Encodable};
 use crate::network::constants::Network;
@@ -59,9 +59,11 @@ pub struct BlockHeader {
     pub bits: u32,
     /// The nonce, selected to obtain a low enough blockhash.
     pub nonce: u32,
+    /// The zerocoin accumulator checkpoint.
+    pub acc_checkpoint: AccCheckpoint,
 }
 
-impl_consensus_encoding!(BlockHeader, version, prev_blockhash, merkle_root, time, bits, nonce);
+impl_consensus_encoding!(BlockHeader, version, prev_blockhash, merkle_root, time, bits, nonce, acc_checkpoint);
 
 impl BlockHeader {
     /// Returns the block hash.
